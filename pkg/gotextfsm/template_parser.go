@@ -115,6 +115,19 @@ func (t *TextFSM) parseStateRules(state_name string, t_file_scanner *bufio.Scann
 		if err != nil {
 			return fmt.Errorf("error in line %d: invalid regex %s", line_no, err)
 		}
+
+		// Check that the rule regex does not contain any named match groups,
+		// the unnamed will be ignored
+		for _, mgroup_name := range regex.SubexpNames() {
+			if mgroup_name != "" {
+				if _, present := t.values[mgroup_name]; !present {
+					return fmt.Errorf(
+						"error in line %d: named match groups are not allowed in rule strings, use values instead",
+						line_no)
+				}
+			}
+		}
+
 		new_rule.regex = regex
 
 		// Parse the actions if provided
@@ -278,9 +291,15 @@ func (t *TextFSM) parseTemplateFileValues(t_file_scanner *bufio.Scanner) error {
 			return fmt.Errorf("error in line %d: regex should be enclosed by ()", line_no)
 		}
 
-		if _, err := regexp.Compile(regex); err != nil {
+		if compiled_regex, err := regexp.Compile(regex); err != nil {
 			return fmt.Errorf("error in line %d: invalid regex %s", line_no, err)
+		} else if len(compiled_regex.SubexpNames()) > 2 {
+			// In Python Textfsm it is possible to define some match groups in the value
+			// regex. This creates a dictionary. At the moment we do not support
+			// this feature, so raise an error in case of additional match groups (so if more than 2)
+			return fmt.Errorf("error in line %d: match groups in values' regex are not supported", line_no)
 		}
+
 		// Create a named match group
 		regex = fmt.Sprintf("(?P<%s>%s)", name, regex[1:len(regex)-1])
 
