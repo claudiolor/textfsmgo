@@ -186,7 +186,7 @@ func (t *TextFSM) appendRecord(current_record *map[string]ReturnVal) *map[string
 
 				fill_val := (*current_record)[fup_key].val
 				for i := last_index; i >= 0; i-- {
-					if t.isEmpty(t.records[i][fup_key].val, val_props.rtype) {
+					if !t.isEmpty(t.records[i][fup_key].val, val_props.rtype) {
 						break
 					}
 					new_val := t.records[i][fup_key]
