@@ -11,14 +11,22 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const VALUE_FORMAT = "Value VARNAME [Flags, comma separated (no spaces)] (regex surraunded by round brackets)"
+// String describing the format of a value
+const VALUE_FORMAT = "Value VARNAME [Flags, comma separated (no spaces)] (regex surrounded by round brackets)"
 
+// regex for matching the name of a state
 var STATE_NAME_REGEX = regexp.MustCompile(`^\w+$`)
+
+// regex for matching the rule
 var RULE_REGEX = regexp.MustCompile(`(?P<match>.*)\s->(?P<action>.*)`)
+
+// regex for matching a variable in a rule
 var VARIABLE_REGEX = regexp.MustCompile(`\${\w+}`)
 
+// regex for matching a new state action in a rule
 var STATE_ACTION_REGEX_STR = `(?P<newstate>\w+)`
 
+// regex for matching a record operation actions defined in a rule
 var LINE_REC_ACTION_REGEX = regexp.MustCompile(
 	fmt.Sprintf(`^(?P<lineop>%s)(\.(?P<recop>%s))?(\s+%s)?$`,
 		strings.Join(LINE_OP, "|"),
@@ -27,6 +35,7 @@ var LINE_REC_ACTION_REGEX = regexp.MustCompile(
 	),
 )
 
+// regex for matching a line operation actions defined in a rule
 var LINE_ACTION_REGEX = regexp.MustCompile(
 	fmt.Sprintf(`^(?P<recop>%s)(\s+%s)?$`,
 		strings.Join(RECORD_OP, "|"),
@@ -34,8 +43,10 @@ var LINE_ACTION_REGEX = regexp.MustCompile(
 	),
 )
 
+// regex for matching an error action in a rule
 var ERROR_ACTION_REGEX = regexp.MustCompile(`^Error(?: (\".*\"|\w+))?$`)
 
+// regex for matching the change of state in a rule
 var STATE_ACTION_REGEX = regexp.MustCompile(
 	fmt.Sprintf(`^%s$`, STATE_ACTION_REGEX_STR),
 )
@@ -44,6 +55,8 @@ func isComment(line *string) bool {
 	return strings.HasPrefix(*line, "#")
 }
 
+// getNextLine(*bufio.Scanner) given a scanner returns the next line in the buffer, the
+// number of the current line and its length
 func (t *TextFSM) getNextLine(t_file_scanner *bufio.Scanner) (string, int, int) {
 	t.template_parsed_line += 1
 	line_no := t.template_parsed_line
@@ -51,6 +64,8 @@ func (t *TextFSM) getNextLine(t_file_scanner *bufio.Scanner) (string, int, int) 
 	return current_line, line_no, len(current_line)
 }
 
+// parseTemplateFile(string) given the path of a template file it parses the file and
+// builds the TextFSM data structure
 func (t *TextFSM) parseTemplateFile(template_file string) error {
 	t_file, err := os.Open(template_file)
 	if err != nil {
@@ -70,6 +85,9 @@ func (t *TextFSM) parseTemplateFile(template_file string) error {
 	return nil
 }
 
+// parseStateRules(string, *bufio.Scanner) given a string containing the state name,
+// extract the rules related to that state by reading the template file. The function
+// returns an error if the template file is not valid.
 func (t *TextFSM) parseStateRules(state_name string, t_file_scanner *bufio.Scanner) error {
 	t.rules[state_name] = []TextFSMRule{}
 	for t_file_scanner.Scan() {
@@ -192,6 +210,8 @@ func (t *TextFSM) parseStateRules(state_name string, t_file_scanner *bufio.Scann
 	return nil
 }
 
+// parseTemplateFileStates(*bufio.Scanner) parses the state section of a template file.
+// The function returns an error if the file is invalid.
 func (t *TextFSM) parseTemplateFileStates(t_file_scanner *bufio.Scanner) error {
 	t.rules = map[string][]TextFSMRule{}
 	for t_file_scanner.Scan() {
@@ -217,6 +237,8 @@ func (t *TextFSM) parseTemplateFileStates(t_file_scanner *bufio.Scanner) error {
 	return nil
 }
 
+// parseTemplateFileValues(*bufio.Scanner) parse the values section of the template file.
+// The function returns an error if the file is invalid.
 func (t *TextFSM) parseTemplateFileValues(t_file_scanner *bufio.Scanner) error {
 	t.fillup_vals = []string{}
 	t.required_vals = []string{}

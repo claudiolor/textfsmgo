@@ -1,6 +1,6 @@
 package gotextfsm
 
-// Fill options
+// Enum for the available filling options
 type FillOption int
 
 const (
@@ -9,7 +9,7 @@ const (
 	FILL_DOWN_OP = 2
 )
 
-// Line operations enum
+// Enum for the available line operations
 type LineOperation string
 
 const (
@@ -17,7 +17,7 @@ const (
 	NEXT_LINE_OP     = "Next"
 )
 
-// Record operations enum
+// Enum for the available record operations
 type RecordOperation string
 
 const (
@@ -27,6 +27,7 @@ const (
 	NO_RECORD_REC_OP = "NoRecord"
 )
 
+// Enum representing the type of value
 type RecordType int
 
 const (

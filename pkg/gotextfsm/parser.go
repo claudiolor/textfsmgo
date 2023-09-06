@@ -1,3 +1,4 @@
+// Package gotextfsm implements parsing of text via the textfsm templates
 package gotextfsm
 
 import (
@@ -9,33 +10,41 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// TextFSMValue is a representation of a Value of the template file
 type TextFSMValue struct {
-	fill     FillOption
-	key      bool
-	regex    string
-	rtype    RecordType
-	required bool
+	fill     FillOption // Tells if the value should be filled if empty
+	key      bool       // Tells if the value contribute to the unique identifier for a row
+	regex    string     // The regex to match the value
+	rtype    RecordType // Tells if the value is a string or a list
+	required bool       // Tells if the value is required or not
 }
 
+// TextFSMRule is a representation of a rule in a textfsm state
 type TextFSMRule struct {
-	regex     *regexp.Regexp
-	line_op   LineOperation
-	rec_op    RecordOperation
-	new_state string
-	error_str string // If present when the rule matches return an error
+	regex     *regexp.Regexp  // The regex to match the row
+	line_op   LineOperation   // The line operation to perform when the rule is matched
+	rec_op    RecordOperation // The record operation to perform when the rule is matched
+	new_state string          // The new state to land on when the rule is matched
+	error_str string          // If present when the rule matches return an error
 }
 
+// TextFSM is a representation of the state machine to perform parsing of semi-formatted
+// text
 type TextFSM struct {
-	template_parsed_line int
-	state                string
-	fillup_vals          []string
-	required_vals        []string
-	records              []map[string]ReturnVal
-	current_record       *map[string]ReturnVal
-	values               map[string]TextFSMValue
-	rules                map[string][]TextFSMRule
+	template_parsed_line int                      // last parsed line of the template
+	state                string                   // current state of the fsm
+	fillup_vals          []string                 // list of values with the fillup option enabled
+	required_vals        []string                 // list of the required values of a row
+	records              []map[string]ReturnVal   // all the collected records
+	current_record       *map[string]ReturnVal    // the record that the fsm is currently filling
+	values               map[string]TextFSMValue  // the collection of values declared in the template
+	rules                map[string][]TextFSMRule // the list of rules to match line against
 }
 
+// NewTextFsmParser(string) creates a new TextFSM object. The function gets the path to
+// the template file describing the FSM. An error is returned when the template file is
+// not valid.
+// example: NewTextFSMParser(/path/to/template_file)
 func NewTextFSMParser(template_file string) (*TextFSM, error) {
 	new_parser := TextFSM{
 		values: map[string]TextFSMValue{},
@@ -54,6 +63,8 @@ func NewTextFSMParser(template_file string) (*TextFSM, error) {
 	return &new_parser, nil
 }
 
+// ParseTextToDicts(string) parse the string provided as argument.
+// Returns a map slice of maps with all the retrieved records
 func (t *TextFSM) ParseTextToDicts(text string) ([]map[string]ReturnVal, error) {
 	// We will first need to reset the state machine
 	t.ResetFSM()
@@ -75,12 +86,15 @@ func (t *TextFSM) ParseTextToDicts(text string) ([]map[string]ReturnVal, error) 
 	return t.records, nil
 }
 
+// ResetFSM() resets the FSM
 func (t *TextFSM) ResetFSM() {
 	t.current_record = nil
 	t.state = START_STATE
 	t.records = []map[string]ReturnVal{}
 }
 
+// isEmpty(valpointer, RecordType) returns a boolean telling if the given valpointer
+// contains an empty value
 func (t TextFSM) isEmpty(val valpointer, rtype RecordType) bool {
 	if rtype == STRING_RECORD && *(val.(*string)) == "" {
 		return true
@@ -90,6 +104,8 @@ func (t TextFSM) isEmpty(val valpointer, rtype RecordType) bool {
 	return false
 }
 
+// generateEmptyRecord() returns a map of a new record, filling the fields with all the
+// "filldown" values if present, otherwise they are left blank
 func (t *TextFSM) generateEmptyRecord() map[string]ReturnVal {
 	new_record := map[string]ReturnVal{}
 	for k, val_prop := range t.values {
@@ -123,6 +139,9 @@ func (t *TextFSM) generateEmptyRecord() map[string]ReturnVal {
 	return new_record
 }
 
+// setValue(string, string, *map[string]ReturnVal) set the given value on the key of the
+// map provided as argument. If the pointer to the map is null, a new one is created from
+// scratch. The function returns back a pointer to the map where the value as been added
 func (t *TextFSM) setValue(key string, val string, current_record *map[string]ReturnVal) *map[string]ReturnVal {
 	if current_record == nil {
 		new_record := t.generateEmptyRecord()
@@ -140,14 +159,14 @@ func (t *TextFSM) setValue(key string, val string, current_record *map[string]Re
 	return current_record
 }
 
-// The clearRecord function implements the Clear operation, so it
-// clear all the values stored so far, filldown excluded
+// clearRecord(*map[string]ReturnVal) implements the Clear operation, so it clear all the
+// values stored so far, filldown excluded
 func (t *TextFSM) clearRecord(current_record *map[string]ReturnVal) {
 	*current_record = t.generateEmptyRecord()
 }
 
-// The clearAllRecord function implements the ClearAll operation, so it
-// clear all the values stored so far
+// clearAllRecord(*map[string]ReturnVal) implements the ClearAll operation, so it
+// clears all the values stored so far
 func (t *TextFSM) clearAllRecord(current_record *map[string]ReturnVal) {
 	if current_record != nil {
 		for _, v := range *current_record {
@@ -161,7 +180,9 @@ func (t *TextFSM) clearAllRecord(current_record *map[string]ReturnVal) {
 	}
 }
 
-// Store the current record
+// appendRecord(*map[string]ReturnVal) append the record filled so far to the list of
+// records. It applies the fillup if any. The function returns a pointer to the new
+// current value.
 func (t *TextFSM) appendRecord(current_record *map[string]ReturnVal) *map[string]ReturnVal {
 	if current_record != nil {
 		// Do not store if required records are not present
@@ -199,6 +220,9 @@ func (t *TextFSM) appendRecord(current_record *map[string]ReturnVal) *map[string
 	return nil
 }
 
+// parseLine(string) parses the line provided as argument checking if it matches one of
+// the rules defined in the template, if so it fills the values in the current record
+// and perform the related actions
 func (t *TextFSM) parseLine(line string) error {
 	for _, rule := range t.rules[t.state] {
 		submatch := rule.regex.FindStringSubmatch(line)
@@ -243,6 +267,7 @@ func (t *TextFSM) parseLine(line string) error {
 	return nil
 }
 
+// validateFSM() checks if the defined FSM is valid and returns an error if this is the case
 func (t TextFSM) validateFSM() error {
 	// Check that the Start state is always present
 	if _, present := t.rules[START_STATE]; !present {
