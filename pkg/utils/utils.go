@@ -2,6 +2,9 @@ package utils
 
 import "regexp"
 
+// GetRegexpNamedGroups(*regexp.Regexp, []string) given a regular expression and the resulting submatch
+// of the FindStringSubmatch() function, it returns a map with for each named group the
+// corresponding match
 func GetRegexpNamedGroups(reg *regexp.Regexp, submatch []string) map[string]string {
 	// Return nil in case of no submatch
 	if submatch == nil {
