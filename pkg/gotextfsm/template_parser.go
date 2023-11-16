@@ -36,7 +36,7 @@ var LINE_REC_ACTION_REGEX = regexp.MustCompile(
 )
 
 // regex for matching a line operation actions defined in a rule
-var LINE_ACTION_REGEX = regexp.MustCompile(
+var REC_ACTION_REGEX = regexp.MustCompile(
 	fmt.Sprintf(`^(?P<recop>%s)(\s+%s)?$`,
 		strings.Join(RECORD_OP, "|"),
 		STATE_ACTION_REGEX_STR,
@@ -154,8 +154,8 @@ func (t *TextFSM) parseStateRules(state_name string, t_file_scanner *bufio.Scann
 			// Parse all the possible combinations of actions formats
 			if submatch := LINE_REC_ACTION_REGEX.FindStringSubmatch(actions_str); submatch != nil {
 				actions = utils.GetRegexpNamedGroups(LINE_REC_ACTION_REGEX, submatch)
-			} else if submatch := LINE_ACTION_REGEX.FindStringSubmatch(actions_str); submatch != nil {
-				actions = utils.GetRegexpNamedGroups(LINE_ACTION_REGEX, submatch)
+			} else if submatch := REC_ACTION_REGEX.FindStringSubmatch(actions_str); submatch != nil {
+				actions = utils.GetRegexpNamedGroups(REC_ACTION_REGEX, submatch)
 			} else if submatch := ERROR_ACTION_REGEX.FindStringSubmatch(actions_str); submatch != nil {
 				actions = make(map[string]string)
 				if submatch[1] != "" {
