@@ -106,6 +106,41 @@ var valTestCases = []struct {
 		line:        "Value Required myval (Hostname (/s).*)",
 		exp_err:     ".*match groups in values' regex are not supported.*",
 	},
+	{
+		description: "Test invalid line",
+		line:        "Value invalid",
+		exp_err:     ".*doesn't follow the format.*",
+	},
+	{
+		description: "Test invalid option",
+		line:        "Value NonExistingOption val (.*)",
+		exp_err:     ".*unknown option.*",
+	},
+	{
+		description: "Test regex not enclosed by brackers",
+		line:        "Value Required myval Hostname (/s).*",
+		exp_err:     `.*regex should be enclosed by \(\).*`,
+	},
+	{
+		description: "Test invalid regex",
+		line:        "Value Required myval (/s).*)",
+		exp_err:     ".*invalid regex.*",
+	},
+	{
+		description: "Test invalid regex",
+		line:        "Value Required myval (/s).*)",
+		exp_err:     ".*invalid regex.*",
+	},
+	{
+		description: "Test conflicting options (Fillup Filldown) ",
+		line:        "Value Fillup,Filldown myval (/s).*)",
+		exp_err:     ".*conflicting option.*",
+	},
+	{
+		description: "Test conflicting options (Filldown Fillup) ",
+		line:        "Value Filldown,Fillup myval (/s).*)",
+		exp_err:     ".*conflicting option.*",
+	},
 }
 
 var ruleTestVars = map[string]TextFSMValue{
