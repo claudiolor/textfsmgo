@@ -35,8 +35,8 @@ type TextFSM struct {
 	state                string                   // current state of the fsm
 	fillup_vals          []string                 // list of values with the fillup option enabled
 	required_vals        []string                 // list of the required values of a row
-	records              []map[string]ReturnVal   // all the collected records
-	current_record       *map[string]ReturnVal    // the record that the fsm is currently filling
+	records              []map[string]interface{} // all the collected records
+	current_record       *map[string]interface{}  // the record that the fsm is currently filling
 	values               map[string]TextFSMValue  // the collection of values declared in the template
 	rules                map[string][]TextFSMRule // the list of rules to match line against
 }
@@ -65,7 +65,7 @@ func NewTextFSMParser(template_file string) (*TextFSM, error) {
 
 // ParseTextToDicts(string) parse the string provided as argument.
 // Returns a map slice of maps with all the retrieved records
-func (t *TextFSM) ParseTextToDicts(text string) ([]map[string]ReturnVal, error) {
+func (t *TextFSM) ParseTextToDicts(text string) ([]map[string]interface{}, error) {
 	// We will first need to reset the state machine
 	t.ResetFSM()
 	lines := strings.Split(text, "\n")
@@ -90,59 +90,54 @@ func (t *TextFSM) ParseTextToDicts(text string) ([]map[string]ReturnVal, error) 
 func (t *TextFSM) ResetFSM() {
 	t.current_record = nil
 	t.state = START_STATE
-	t.records = []map[string]ReturnVal{}
+	t.records = []map[string]interface{}{}
 }
 
-// isEmpty(valpointer, RecordType) returns a boolean telling if the given valpointer
+// isEmpty(interface{}, RecordType) returns a boolean telling if the given interface{}
 // contains an empty value
-func (t TextFSM) isEmpty(val valpointer, rtype RecordType) bool {
-	if rtype == STRING_RECORD && *(val.(*string)) == "" {
-		return true
-	} else if rtype == LIST_RECORD && len(*(val.(*[]string))) == 0 {
-		return true
+func (t TextFSM) isEmpty(val interface{}) bool {
+	switch val := val.(type) {
+	case string:
+		return val == ""
+	case []string:
+		return len(val) == 0
 	}
 	return false
 }
 
 // generateEmptyRecord() returns a map of a new record, filling the fields with all the
 // "filldown" values if present, otherwise they are left blank
-func (t *TextFSM) generateEmptyRecord() map[string]ReturnVal {
-	new_record := map[string]ReturnVal{}
+func (t *TextFSM) generateEmptyRecord() map[string]interface{} {
+	new_record := map[string]interface{}{}
 	for k, val_prop := range t.values {
 		if val_prop.rtype == STRING_RECORD {
 			new_val := ""
 			if val_prop.fill == FILL_DOWN_OP {
 				n_records := len(t.records)
 				if n_records > 0 {
-					new_val = *(t.records[n_records-1][k].val.(*string))
+					new_val = t.records[n_records-1][k].(string)
 				}
 			}
-			new_record[k] = ReturnVal{
-				val:   valpointer(&new_val),
-				rtype: val_prop.rtype,
-			}
+			new_record[k] = new_val
 		} else {
 			// If the record is a list
 			new_val := []string{}
 			if val_prop.fill == FILL_DOWN_OP {
 				n_records := len(t.records)
 				if n_records > 0 {
-					new_val = *(t.records[n_records-1][k].val.(*[]string))
+					new_val = t.records[n_records-1][k].([]string)
 				}
 			}
-			new_record[k] = ReturnVal{
-				val:   valpointer(&new_val),
-				rtype: val_prop.rtype,
-			}
+			new_record[k] = new_val
 		}
 	}
 	return new_record
 }
 
-// setValue(string, string, *map[string]ReturnVal) set the given value on the key of the
+// setValue(string, string, *map[string]interface{}) set the given value on the key of the
 // map provided as argument. If the pointer to the map is null, a new one is created from
 // scratch. The function returns back a pointer to the map where the value as been added
-func (t *TextFSM) setValue(key string, val string, current_record *map[string]ReturnVal) *map[string]ReturnVal {
+func (t *TextFSM) setValue(key string, val string, current_record *map[string]interface{}) *map[string]interface{} {
 	if current_record == nil {
 		new_record := t.generateEmptyRecord()
 		current_record = &new_record
@@ -150,45 +145,43 @@ func (t *TextFSM) setValue(key string, val string, current_record *map[string]Re
 
 	rtype := t.values[key].rtype
 	if rtype == STRING_RECORD {
-		*((*current_record)[key].val).(*string) = val
+		(*current_record)[key] = val
 	} else {
 		// If the record is a list
-		list_val_ptr := (*current_record)[key].val.(*[]string)
-		*list_val_ptr = append(*list_val_ptr, val)
+		(*current_record)[key] = append((*current_record)[key].([]string), val)
 	}
 	return current_record
 }
 
-// clearRecord(*map[string]ReturnVal) implements the Clear operation, so it clear all the
+// clearRecord(*map[string]interface{}) implements the Clear operation, so it clear all the
 // values stored so far, filldown excluded
-func (t *TextFSM) clearRecord(current_record *map[string]ReturnVal) {
+func (t *TextFSM) clearRecord(current_record *map[string]interface{}) {
 	*current_record = t.generateEmptyRecord()
 }
 
-// clearAllRecord(*map[string]ReturnVal) implements the ClearAll operation, so it
+// clearAllRecord(*map[string]interface{}) implements the ClearAll operation, so it
 // clears all the values stored so far
-func (t *TextFSM) clearAllRecord(current_record *map[string]ReturnVal) {
+func (t *TextFSM) clearAllRecord(current_record *map[string]interface{}) {
 	if current_record != nil {
-		for _, v := range *current_record {
-			switch v.val.(type) {
+		for k, v := range *current_record {
+			switch v.(type) {
 			case string:
-				*(v.val.(*string)) = ""
+				(*current_record)[k] = ""
 			case []string:
-				*(v.val.(*[]string)) = []string{}
+				(*current_record)[k] = []string{}
 			}
 		}
 	}
 }
 
-// appendRecord(*map[string]ReturnVal) append the record filled so far to the list of
+// appendRecord(*map[string]interface{}) append the record filled so far to the list of
 // records. It applies the fillup if any. The function returns a pointer to the new
 // current value.
-func (t *TextFSM) appendRecord(current_record *map[string]ReturnVal) *map[string]ReturnVal {
+func (t *TextFSM) appendRecord(current_record *map[string]interface{}) *map[string]interface{} {
 	if current_record != nil {
 		// Do not store if required records are not present
 		for _, req_key := range t.required_vals {
-			val_props := t.values[req_key]
-			if t.isEmpty((*current_record)[req_key].val, val_props.rtype) {
+			if t.isEmpty((*current_record)[req_key]) {
 				return nil
 			}
 		}
@@ -200,19 +193,16 @@ func (t *TextFSM) appendRecord(current_record *map[string]ReturnVal) *map[string
 		// Fill up values if any
 		if last_index != -1 {
 			for _, fup_key := range t.fillup_vals {
-				val_props := t.values[fup_key]
-				if t.isEmpty((*current_record)[fup_key].val, val_props.rtype) {
+				if t.isEmpty((*current_record)[fup_key]) {
 					continue
 				}
 
-				fill_val := (*current_record)[fup_key].val
+				fill_val := (*current_record)[fup_key]
 				for i := last_index; i >= 0; i-- {
-					if !t.isEmpty(t.records[i][fup_key].val, val_props.rtype) {
+					if !t.isEmpty(t.records[i][fup_key]) {
 						break
 					}
-					new_val := t.records[i][fup_key]
-					new_val.val = fill_val
-					t.records[i][fup_key] = new_val
+					t.records[i][fup_key] = fill_val
 				}
 			}
 		}
