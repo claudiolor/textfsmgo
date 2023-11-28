@@ -315,11 +315,15 @@ func (t *TextFSM) parseTemplateFileValues(t_file_scanner *bufio.Scanner) error {
 
 		if compiled_regex, err := regexp.Compile(regex); err != nil {
 			return fmt.Errorf("error in line %d: invalid regex %s", line_no, err)
-		} else if len(compiled_regex.SubexpNames()) > 2 {
-			// In Python Textfsm it is possible to define some match groups in the value
+		} else if matchgroups := compiled_regex.SubexpNames(); len(matchgroups) > 2 {
+			// In Python Textfsm it is possible to define some named match groups in the value
 			// regex. This creates a dictionary. At the moment we do not support
 			// this feature, so raise an error in case of additional match groups (so if more than 2)
-			return fmt.Errorf("error in line %d: match groups in values' regex are not supported", line_no)
+			for _, group_name := range matchgroups {
+				if group_name != "" {
+					return fmt.Errorf("error in line %d: match groups in values' regex are not supported", line_no)
+				}
+			}
 		}
 
 		// Create a named match group

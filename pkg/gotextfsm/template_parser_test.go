@@ -102,8 +102,8 @@ var valTestCases = []struct {
 		exp_err:     ".*expected Value token.*",
 	},
 	{
-		description: "Test match groups in regex",
-		line:        "Value Required myval (Hostname (/s).*)",
+		description: "Test named-match groups in regex",
+		line:        "Value Required myval (?P<hostname>Hostname (/s).*)",
 		exp_err:     ".*match groups in values' regex are not supported.*",
 	},
 	{
