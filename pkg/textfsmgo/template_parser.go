@@ -1,4 +1,4 @@
-package gotextfsm
+package textfsmgo
 
 import (
 	"bufio"
@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/claudiolor/gotextfsm/pkg/utils"
+	"github.com/claudiolor/textfsmgo/pkg/utils"
 	"golang.org/x/exp/slices"
 )
 

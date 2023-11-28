@@ -1,4 +1,4 @@
-package gotextfsm
+package textfsmgo
 
 import (
 	"bufio"

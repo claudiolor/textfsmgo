@@ -1,4 +1,4 @@
-module github.com/claudiolor/gotextfsm
+module github.com/claudiolor/textfsmgo
 
 go 1.20
 

@@ -1,4 +1,4 @@
-package gotextfsm
+package textfsmgo
 
 // Enum for the available filling options
 type FillOption int

@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/claudiolor/gotextfsm/pkg/utils"
+	"github.com/claudiolor/textfsmgo/pkg/utils"
 )
 
 var testCases = []struct {

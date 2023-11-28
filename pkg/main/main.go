@@ -6,8 +6,8 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/claudiolor/gotextfsm/pkg/gotextfsm"
-	"github.com/claudiolor/gotextfsm/pkg/utils"
+	"github.com/claudiolor/textfsmgo/pkg/textfsmgo"
+	"github.com/claudiolor/textfsmgo/pkg/utils"
 )
 
 func showError(err error, ecode int) {
@@ -40,7 +40,7 @@ func main() {
 	}
 	in_file := flag.Arg(0)
 	tmpl_file := flag.Arg(1)
-	parser, err := gotextfsm.NewTextFSMParser(tmpl_file)
+	parser, err := textfsmgo.NewTextFSMParser(tmpl_file)
 	if err != nil {
 		showError(err, 1)
 	}

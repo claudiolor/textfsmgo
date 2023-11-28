@@ -1,12 +1,12 @@
-// Package gotextfsm implements parsing of text via the textfsm templates
-package gotextfsm
+// Package textfsmgo implements parsing of text via the textfsm templates
+package textfsmgo
 
 import (
 	"fmt"
 	"regexp"
 	"strings"
 
-	"github.com/claudiolor/gotextfsm/pkg/utils"
+	"github.com/claudiolor/textfsmgo/pkg/utils"
 	"golang.org/x/exp/slices"
 )
 
