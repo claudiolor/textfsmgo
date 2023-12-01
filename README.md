@@ -52,7 +52,7 @@ To use TextFSMGo declare it as dependency of your project
 go get github.com/claudiolor/textfsmgo
 ```
 
-To use TextFSMGo the first thing to do is writing the template for the semi-formatted text to parse.
+To use TextFSMGo the first thing to do is [writing the template](https://github.com/google/textfsm/wiki/TextFSM)) for the semi-formatted text to parse.
 Then it will be possible to create a state machine starting from a template file:
 
 ```golang
@@ -69,12 +69,12 @@ if err != nil {
 }
 ```
 
-The `parser.ParseTextToDicts()` returns a slice of map having `string` as keys and `interface{}` as
-value, which could be a string or a slice of strings.
+The `parser.ParseTextToDicts()` returns a slice of maps having `string` as keys and `interface{}` as
+value, which could actually be a string or a slice of strings.
 
 #### Handling the result
 
-Let's imagine we would like to manager the [result of the template to parse the command](./examples/data/ip_cmd.textfsm) `ip a`, it might be possible to build a struct where to store each entry:
+Let's imagine we would like to parse the command `ip a`. The first thing to do is writing a [template](./examples/data/ip_cmd.textfsm) to parse it. At that point, we can feed the template to TextFSMGo so that it can parse the command output. TextFSMGo returns a slice of maps having `string` as keys and `interface{}` as values, which could be converted in a slice of structs, as in the example below:
 
 ```golang
 type NetworkIf struct {
@@ -114,7 +114,7 @@ func main(){
 
 ##### JSON encoding
 
-TextFSMGo provides an utility function that allows to encode the result in json `ConvertResToJson(map_res *[]map[string]interface{}, indent bool)`:
+TextFSMGo provides an utility function that allows to encode the parsed result in json: `ConvertResToJson(map_res *[]map[string]interface{}, indent bool)`. In the example below the result of the parsing is converted to json:
 
 ```golang
 import "github.com/claudiolor/textfsmgo/pkg/textfsmg"
@@ -139,7 +139,7 @@ func main(){
 ## Performance
 
 TextFSMGo, also due to the used programming language, guarantes a good level of performance.
-Some tests were performed parsing some raw data and encoding it in json. The tests were repeated increasing the size of the raw data.
+Some tests were performed parsing some raw data and encoding it in json and comparing the time required by TextFSMGo and original Python implementation. The tests were repeated increasing the size of the raw data.
 On average **TextFSMGo was the 70% faster than the original Python implementation**:
 
 ![Graph with difference in parsing time between TextFSMGo and the original Python implementation](./docs/performance_test.png)
