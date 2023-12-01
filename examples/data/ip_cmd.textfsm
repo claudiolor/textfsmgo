@@ -1,0 +1,12 @@
+Value ifname (\S+)
+Value macaddr ([\da-fA-F]{2}(:[\da-fA-F]{2}){5})
+Value List addresses ((?:\d+(\.\d+){3})|(?:(?:(?:[A-Fa-f0-9]*)?:){1,7}[A-Fa-f0-9]*))
+Value mtu (\d+)
+Value state (\S+)
+
+Start
+    ^\s*\d: -> Continue.Record
+    ^\s*link/\S+\s+${macaddr} .*
+    ^\s*\d: ${ifname}: <.+> mtu ${mtu} .* state ${state} .*
+    ^\s*inet[6]?\s+${addresses}.*
+
